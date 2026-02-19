@@ -1,37 +1,74 @@
 import { useSavedJobsStore } from "@/store/useSavedJobsStore";
-import { useNavigation } from "@react-navigation/native";
+import { router } from "expo-router";
 import React from "react";
-import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, Pressable, Text, View } from "react-native";
 import { styles } from "./saved-jobs-screen.style";
 
 export default function SavedJobsScreen() {
-  const navigation = useNavigation();
   const savedJobs = useSavedJobsStore((state) => state.savedJobs);
   const removeJob = useSavedJobsStore((state) => state.removeJob);
 
   const renderItem = ({ item }: any) => (
     <View style={styles.card}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.company}>{item.companyName}</Text>
-      </View>
+      {/* Green top accent bar — Duolingo tile feel */}
+      <View style={styles.cardAccent} />
 
-      <View style={styles.metaRow}>
-        <Text style={styles.metaText}>{item.jobType}</Text>
-        <Text style={styles.metaText}>{item.workModel}</Text>
-      </View>
+      <View style={styles.cardContent}>
+        {/* Header */}
+        <View style={styles.cardHeader}>
+          <Text style={styles.title}>{item.title}</Text>
+          <Text style={styles.company}>{item.companyName}</Text>
+        </View>
 
-      <View style={styles.footerRow}>
-        <TouchableOpacity style={styles.applyButton}>
-          <Text style={styles.applyText}>Apply</Text>
-        </TouchableOpacity>
+        {/* Meta tags */}
+        <View style={styles.metaRow}>
+          {item.jobType && (
+            <View style={styles.tag}>
+              <Text style={styles.tagText}>{item.jobType}</Text>
+            </View>
+          )}
+          {item.workModel && (
+            <View style={styles.tag}>
+              <Text style={styles.tagText}>{item.workModel}</Text>
+            </View>
+          )}
+          {item.seniorityLevel && (
+            <View style={[styles.tag, styles.tagGreen]}>
+              <Text style={[styles.tagText, styles.tagTextGreen]}>
+                {item.seniorityLevel}
+              </Text>
+            </View>
+          )}
+        </View>
 
-        <TouchableOpacity
-          style={styles.removeButton}
-          onPress={() => removeJob(item.id)}
-        >
-          <Text style={styles.removeText}>Remove</Text>
-        </TouchableOpacity>
+        {/* Salary */}
+        <Text style={styles.salary}>
+          {item.minSalary && item.maxSalary
+            ? `${item.currency} ${item.minSalary}–${item.maxSalary}`
+            : "Salary not listed"}
+        </Text>
+
+        {/* Action buttons */}
+        <View style={styles.footerRow}>
+          <Pressable
+            style={styles.applyButton}
+            onPress={() =>
+              router.push({
+                pathname: "/application-form-screen",
+                params: { jobId: item.id, from: "saved" },
+              })
+            }
+          >
+            <Text style={styles.applyText}>✦ Apply Now</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.removeButton}
+            onPress={() => removeJob(item.id)}
+          >
+            <Text style={styles.removeText}>Remove</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -39,24 +76,37 @@ export default function SavedJobsScreen() {
   if (savedJobs.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyTitle}>No Saved Jobs Yet</Text>
+        <Text style={styles.emptyEmoji}>🔖</Text>
+        <Text style={styles.emptyTitle}>No saved jobs yet!</Text>
         <Text style={styles.emptySubtitle}>
-          Start saving jobs from the Job Finder screen.
+          Tap "Save" on any job in the Job Finder to keep track of it here.
         </Text>
+        <Pressable style={styles.browseButton} onPress={() => router.push("/")}>
+          <Text style={styles.browseButtonText}>Browse Jobs</Text>
+        </Pressable>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Saved Jobs</Text>
+      {/* Header */}
+      <View style={styles.headerBlock}>
+        <Text style={styles.headerEyebrow}>YOUR LIST</Text>
+        <Text style={styles.header}>Saved Jobs</Text>
+        <View style={styles.countBadge}>
+          <Text style={styles.countBadgeText}>
+            {savedJobs.length} {savedJobs.length === 1 ? "job" : "jobs"} saved
+          </Text>
+        </View>
+      </View>
 
       <FlatList
         data={savedJobs}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 60 }}
       />
     </View>
   );
