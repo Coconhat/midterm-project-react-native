@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import uuid from "react-native-uuid";
 import { styles } from "./job-finder-screen.style";
 
 export default function JobFinderScreen() {
@@ -24,56 +25,53 @@ export default function JobFinderScreen() {
 
   const API_URL = "https://empllo.com/api/v1";
 
-  // BUG FIX: Use a stable ID derived from job data instead of uuid.v4()
-  // uuid.v4() generates a NEW random ID on every render/fetch, so saved IDs
-  // never match the re-generated IDs. Use a deterministic key instead.
-  const transformJobs = (apiJobs: ApiJob[]): Job[] => {
-    return apiJobs.map((job, index) => ({
+  // IDs are assigned once at fetch time and stored in state — they remain
+  // stable for the session so savedJobs IDs will always match correctly.
+  const transformJobs = (apiJobs: ApiJob[]): Job[] =>
+    apiJobs.map((job) => ({
       ...job,
-      // Use API-provided id if available, otherwise fall back to a stable composite key
-      id:
-        job.id ??
-        `${job.companyName}-${job.title}-${index}`
-          .replace(/\s+/g, "-")
-          .toLowerCase(),
+      id: uuid.v4().toString(),
       isSaved: false,
     }));
-  };
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
         const response = await fetch(API_URL);
         const data = await response.json();
-        const formattedJobs = transformJobs(data.jobs);
-        setJobs(formattedJobs);
+        setJobs(transformJobs(data.jobs));
       } catch (error) {
         console.error("Error fetching jobs:", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchJobs();
   }, []);
 
-  const filteredJobs = useMemo(() => {
-    return jobs.filter((job) =>
-      job.title.toLowerCase().includes(search.toLowerCase()),
-    );
-  }, [search, jobs]);
+  const filteredJobs = useMemo(
+    () =>
+      jobs.filter((job) =>
+        job.title.toLowerCase().includes(search.toLowerCase()),
+      ),
+    [search, jobs],
+  );
 
   const renderItem = ({ item }: { item: Job }) => {
     const saved = isJobSaved(item.id);
     return (
       <View style={styles.card}>
+        {/* Duolingo-style top accent stripe */}
         <View style={styles.cardAccent} />
+
         <View style={styles.cardContent}>
+          {/* Job title + company */}
           <View style={styles.cardHeader}>
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.company}>{item.companyName}</Text>
           </View>
 
+          {/* Type / model / seniority tags */}
           <View style={styles.metaRow}>
             {item.jobType && (
               <View style={styles.tag}>
@@ -86,20 +84,34 @@ export default function JobFinderScreen() {
               </View>
             )}
             {item.seniorityLevel && (
-              <View style={[styles.tag, styles.tagDark]}>
-                <Text style={[styles.tagText, styles.tagTextDark]}>
+              <View style={[styles.tag, styles.tagGreen]}>
+                <Text style={[styles.tagText, styles.tagTextGreen]}>
                   {item.seniorityLevel}
                 </Text>
               </View>
             )}
           </View>
 
-          <View style={styles.footerRow}>
-            <Text style={styles.salary}>
-              {item.minSalary && item.maxSalary
-                ? `${item.currency} ${item.minSalary}–${item.maxSalary}`
-                : "Salary not listed"}
-            </Text>
+          {/* Salary */}
+          <Text style={styles.salary}>
+            {item.minSalary && item.maxSalary
+              ? `${item.currency} ${item.minSalary}–${item.maxSalary}`
+              : "Salary not listed"}
+          </Text>
+
+          {/* Action row: Apply (primary) + Save (secondary) */}
+          <View style={styles.actionRow}>
+            <Pressable
+              style={styles.applyButton}
+              onPress={() =>
+                router.push({
+                  pathname: "/application-form-screen",
+                  params: { jobId: item.id, from: "finder" },
+                })
+              }
+            >
+              <Text style={styles.applyButtonText}>Apply</Text>
+            </Pressable>
 
             <Pressable
               style={[styles.saveButton, saved && styles.saveButtonActive]}
@@ -123,7 +135,7 @@ export default function JobFinderScreen() {
   if (loading) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#E8FF47" />
+        <ActivityIndicator size="large" color="#58CC02" />
         <Text style={styles.loaderText}>Finding opportunities...</Text>
       </View>
     );
@@ -137,19 +149,19 @@ export default function JobFinderScreen() {
         <Text style={styles.header}>Find Your{"\n"}Next Role.</Text>
       </View>
 
-      {/* Search */}
+      {/* Search bar */}
       <View style={styles.searchWrapper}>
         <Text style={styles.searchIcon}>⌕</Text>
         <TextInput
           placeholder="Search by title..."
-          placeholderTextColor="#666"
+          placeholderTextColor="#AFAFAF"
           value={search}
           onChangeText={setSearch}
           style={styles.searchInput}
         />
       </View>
 
-      {/* Nav row */}
+      {/* Count + nav */}
       <View style={styles.navRow}>
         <Text style={styles.countText}>{filteredJobs.length} listings</Text>
         <Pressable onPress={() => router.push("/saved-jobs-screen")}>
