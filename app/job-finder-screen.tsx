@@ -1,19 +1,24 @@
+import { useSavedJobsStore } from "@/store/useSavedJobsStore";
 import { ApiJob, Job } from "@/types/jobs";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import uuid from "react-native-uuid";
+import { styles } from "./job-finder-screen.style";
 
 export default function JobFinderScreen() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+
+  const toggleSaveJob = useSavedJobsStore((state) => state.toggleSaveJob);
+  const isJobSaved = useSavedJobsStore((state) => state.isJobSaved);
 
   const API_URL = "https://empllo.com/api/v1";
 
@@ -68,11 +73,14 @@ export default function JobFinderScreen() {
             : "Salary not specified"}
         </Text>
 
-        <TouchableOpacity style={styles.saveButton}>
+        <Pressable
+          style={styles.saveButton}
+          onPress={() => toggleSaveJob(item)}
+        >
           <Text style={styles.saveButtonText}>
-            {item.isSaved ? "Saved" : "Save"}
+            {isJobSaved(item.id) ? "Saved" : "Save"}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );
