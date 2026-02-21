@@ -54,7 +54,7 @@ export default function SavedJobsScreen() {
             style={styles.applyButton}
             onPress={() =>
               router.push({
-                pathname: "/application-form-screen",
+                pathname: "/application-screen",
                 params: { jobId: item.id, from: "saved" },
               })
             }
