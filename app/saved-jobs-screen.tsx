@@ -81,7 +81,13 @@ export default function SavedJobsScreen() {
         <Text style={styles.emptySubtitle}>
           Tap "Save" on any job in the Job Finder to keep track of it here.
         </Text>
-        <Pressable style={styles.browseButton} onPress={() => router.push("/")}>
+        <Pressable
+          style={styles.browseButton}
+          onPress={() => {
+            router.dismissAll();
+            router.replace("/");
+          }}
+        >
           <Text style={styles.browseButtonText}>Browse Jobs</Text>
         </Pressable>
       </View>
